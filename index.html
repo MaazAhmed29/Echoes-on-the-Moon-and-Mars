@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Echoes on the Moon &amp; Mars: Silent Pioneers of Space</title>
+  <meta name="description" content="Interactive story-driven explorer of NASA's retired equipment on the Moon and Mars, built for the 2026 NASA Space Apps Challenge." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <style>
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: #050814;
+      color: #e2e8f0;
+    }
+    h1, h2, h3, h4, .font-display {
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+    }
+    .font-mono-tech {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+    }
+    .glass-card {
+      background: rgba(13, 20, 38, 0.84);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      backdrop-filter: blur(12px);
+    }
+
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(56, 189, 248, 0.35) rgba(15, 23, 42, 0.4);
+    }
+    *::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    *::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    *::-webkit-scrollbar-thumb {
+      background: rgba(56, 189, 248, 0.3);
+      border-radius: 9999px;
+    }
+    *::-webkit-scrollbar-thumb:hover {
+      background: rgba(56, 189, 248, 0.55);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-sky-500/30 selection:text-sky-200 relative">
+  <canvas id="starfieldCanvas" class="fixed inset-0 w-full h-full -z-10 pointer-events-none" aria-hidden="true"></canvas>
+
+  <!-- Top Navigation -->
+  <header class="sticky top-0 z-30 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-md">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500/20 to-indigo-600/30 border border-sky-400/40 flex items-center justify-center shadow-lg shadow-sky-500/15" aria-hidden="true">
+          <svg class="w-6 h-6 text-sky-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="12" cy="12" r="5" class="fill-sky-400/20 stroke-sky-300" />
+            <ellipse cx="12" cy="12" rx="10.5" ry="3.8" transform="rotate(-24 12 12)" class="stroke-indigo-300" />
+            <circle cx="19.5" cy="8.5" r="1.3" class="fill-amber-300 stroke-none" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold tracking-tight text-white leading-tight">Echoes on the Moon &amp; Mars</h1>
+          <p class="text-xs text-sky-300/80 font-mono-tech">Abandoned but Not Forgotten | NASA Archive</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 sm:gap-3">
+        <div class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs font-medium text-slate-300 font-mono-tech">
+          Explored: <span id="exploredCount" class="text-sky-400 font-bold">0</span>/<span id="totalCount">6</span>
+        </div>
+        <button id="openQuizBtn" type="button" class="px-3.5 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-400/35 text-amber-300 text-xs sm:text-sm font-semibold transition cursor-pointer">
+          Quiz
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8 space-y-8">
+
+    <!-- Hero Banner -->
+    <section class="glass-card rounded-2xl p-6 sm:p-8 relative overflow-hidden">
+      <div class="absolute -right-12 -top-12 w-56 h-56 rounded-full bg-sky-500/10 blur-3xl pointer-events-none"></div>
+      <div class="max-w-3xl space-y-3">
+        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold font-mono-tech bg-sky-500/15 text-sky-300 border border-sky-400/25">
+          Interactive Mission Archive | NASA Image &amp; Video Library
+        </span>
+        <h2 class="text-2xl sm:text-4xl font-bold text-white tracking-tight leading-snug">
+          Machines that fell silent so humanity could learn.
+        </h2>
+        <p class="text-sm sm:text-base text-slate-300 leading-relaxed">
+          Across the Moon and Mars, retired landers, rovers, and flyers still rest where their missions ended. Select any artifact below to read its mission story, see what went wrong, learn why and how it was built, and click any NASA archive photo to inspect it in full view.
+        </p>
+      </div>
+    </section>
+
+    <!-- Filter & Search Controls -->
+    <section class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div class="flex flex-wrap items-center gap-2" role="tablist" aria-label="Filter artifacts by destination">
+        <button type="button" data-filter="all" class="filter-btn px-4 py-2 rounded-xl text-sm font-semibold bg-sky-500 text-slate-950 transition cursor-pointer">
+          All Worlds (6)
+        </button>
+        <button type="button" data-filter="Moon" class="filter-btn px-4 py-2 rounded-xl text-sm font-semibold bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700 transition cursor-pointer">
+          Moon (2)
+        </button>
+        <button type="button" data-filter="Mars" class="filter-btn px-4 py-2 rounded-xl text-sm font-semibold bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700 transition cursor-pointer">
+          Mars (4)
+        </button>
+      </div>
+
+      <div class="relative w-full sm:w-72">
+        <input id="searchInput" type="search" placeholder="Search mission, astronaut, or site..." class="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-900/90 border border-slate-800 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 transition" />
+        <svg class="w-4 h-4 text-slate-500 absolute left-3 top-2.5 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1010.5 18a7.5 7.5 0 006.15-3.35z" />
+        </svg>
+      </div>
+    </section>
+
+    <!-- Artifact Cards Grid -->
+    <section id="artifactGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" aria-live="polite"></section>
+
+    <!-- Empty Search State -->
+    <div id="emptyState" class="hidden glass-card rounded-2xl p-10 text-center space-y-3">
+      <p class="text-slate-300 font-medium">No artifacts matched your search.</p>
+      <button id="resetFiltersBtn" type="button" class="px-4 py-2 rounded-xl bg-sky-500/20 text-sky-300 border border-sky-400/30 text-sm font-semibold hover:bg-sky-500/30 transition cursor-pointer">
+        Show All Artifacts
+      </button>
+    </div>
+
+  </main>
+
+  <!-- Artifact Story & Operations Modal -->
+  <div id="storyModal" class="fixed inset-0 z-40 hidden items-start justify-center overflow-y-auto p-3 sm:p-6 bg-slate-950/85 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="glass-card w-full max-w-3xl my-auto rounded-2xl shadow-2xl border border-slate-700/70 overflow-hidden">
+      <div class="sticky top-0 z-10 flex items-center justify-between gap-4 px-5 py-4 bg-slate-900/95 border-b border-slate-800">
+        <div>
+          <span id="modalBadge" class="text-xs font-semibold font-mono-tech uppercase tracking-wider text-sky-400"></span>
+          <h3 id="modalTitle" class="text-lg sm:text-xl font-bold text-white mt-0.5"></h3>
+        </div>
+        <button id="closeModalBtn" type="button" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer" aria-label="Close mission story">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="p-5 sm:p-6 space-y-6">
+        <!-- Sleek Mission Dossier Table -->
+        <div class="overflow-hidden border-y border-slate-800/90 divide-y divide-slate-800/70">
+          <div class="py-2.5 px-1 flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-4 hover:bg-slate-900/40 transition">
+            <span class="flex items-center gap-2 text-[11px] font-mono-tech uppercase tracking-wider text-sky-400 shrink-0">
+              <span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span>
+              Mission, Object &amp; Crew
+            </span>
+            <span id="modalCrew" class="text-sm font-medium text-white sm:text-right"></span>
+          </div>
+          <div class="py-2.5 px-1 flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-4 hover:bg-slate-900/40 transition">
+            <span class="flex items-center gap-2 text-[11px] font-mono-tech uppercase tracking-wider text-violet-400 shrink-0">
+              <span class="w-1.5 h-1.5 rounded-full bg-violet-400"></span>
+              Year, Date &amp; Day
+            </span>
+            <span id="modalDates" class="text-sm font-medium text-white sm:text-right"></span>
+          </div>
+          <div class="py-2.5 px-1 flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-4 hover:bg-slate-900/40 transition">
+            <span class="flex items-center gap-2 text-[11px] font-mono-tech uppercase tracking-wider text-cyan-400 shrink-0">
+              <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+              Resting Location
+            </span>
+            <span class="flex items-center sm:justify-end gap-2">
+              <span id="modalLocation" class="text-sm font-medium text-slate-200 sm:text-right"></span>
+              <button id="copyLocationBtn" type="button" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-mono-tech text-cyan-300 transition cursor-pointer">
+                Copy
+              </button>
+            </span>
+          </div>
+          <div class="py-2.5 px-1 flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-4 hover:bg-slate-900/40 transition">
+            <span class="flex items-center gap-2 text-[11px] font-mono-tech uppercase tracking-wider text-emerald-400 shrink-0">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              Mission Duration (Planned vs. Actual)
+            </span>
+            <span id="modalDuration" class="text-sm font-semibold text-emerald-300 sm:text-right"></span>
+          </div>
+        </div>
+
+        <!-- Third-Person Mission Story -->
+        <div class="p-4 sm:p-5 rounded-xl bg-gradient-to-br from-slate-900 to-slate-900/60 border border-sky-500/25 space-y-2">
+          <p class="text-xs font-bold font-mono-tech uppercase tracking-wider text-sky-400">Mission Story</p>
+          <p id="modalStory" class="text-sm sm:text-base text-slate-100 leading-relaxed"></p>
+        </div>
+
+        <!-- Why They Did It & How + What Went Wrong -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="p-4 rounded-xl bg-emerald-950/30 border border-emerald-500/25 space-y-1.5">
+            <h4 class="text-xs font-bold font-mono-tech uppercase tracking-wider text-emerald-400">Why They Did It &amp; How</h4>
+            <p id="modalWhyHow" class="text-sm text-slate-200 leading-relaxed"></p>
+          </div>
+          <div class="p-4 rounded-xl bg-amber-950/30 border border-amber-500/25 space-y-1.5">
+            <h4 class="text-xs font-bold font-mono-tech uppercase tracking-wider text-amber-400">What Went Wrong</h4>
+            <p id="modalWrong" class="text-sm text-slate-200 leading-relaxed"></p>
+          </div>
+        </div>
+
+        <!-- Clear Step-by-Step Mission Timeline -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <h4 class="text-sm font-bold font-display uppercase tracking-wider text-slate-200">Mission Journey</h4>
+            <span class="text-xs text-slate-400 font-mono-tech">Click a step</span>
+          </div>
+          <div id="phaseTabs" class="grid grid-cols-1 sm:grid-cols-3 gap-2"></div>
+          <div id="phaseContent" class="p-4 rounded-xl bg-slate-900/90 border border-slate-800 text-sm text-slate-200 leading-relaxed"></div>
+        </div>
+
+        <!-- Live NASA Image Archive Strip -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <div>
+              <h4 class="text-sm font-bold font-display uppercase tracking-wider text-slate-200">Real NASA Photos</h4>
+              <p class="text-xs text-slate-400">Click any photo to open full view</p>
+            </div>
+            <button id="retryNasaBtn" type="button" class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs font-semibold text-sky-400 hover:text-sky-300 hover:border-slate-700 transition cursor-pointer">
+              Refresh Archive
+            </button>
+          </div>
+          <div id="nasaGallery" class="grid grid-cols-1 sm:grid-cols-3 gap-3"></div>
+          <p id="nasaStatus" class="text-xs text-slate-400 font-mono-tech empty:hidden"></p>
+        </div>
+
+        <!-- Scientific Legacy & Action -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-slate-800">
+          <div>
+            <p class="text-xs font-semibold font-mono-tech uppercase tracking-wider text-sky-400">Key Scientific Discovery</p>
+            <p id="modalDiscovery" class="text-sm text-slate-200 mt-1 leading-relaxed"></p>
+          </div>
+          <button id="markExploredBtn" type="button" class="shrink-0 px-4 py-2.5 rounded-xl text-sm font-semibold transition cursor-pointer"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Full-Image Lightbox Modal -->
+  <div id="imageLightbox" class="fixed inset-0 z-50 hidden items-center justify-center p-4 sm:p-8 bg-black/90 backdrop-blur-md" role="dialog" aria-modal="true" aria-labelledby="lightboxTitle">
+    <div class="relative w-full max-w-4xl flex flex-col items-center gap-4">
+      <div class="w-full flex items-center justify-between gap-4">
+        <div class="min-w-0">
+          <h4 id="lightboxTitle" class="text-sm sm:text-base font-bold text-white truncate"></h4>
+          <p id="lightboxMeta" class="text-xs font-mono-tech text-slate-400"></p>
+        </div>
+        <button id="closeLightboxBtn" type="button" class="shrink-0 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition cursor-pointer">
+          Close Full View
+        </button>
+      </div>
+      <div class="w-full flex items-center justify-center rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 p-2">
+        <img id="lightboxImg" src="" alt="" class="max-h-[78vh] w-auto max-w-full object-contain rounded-xl" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Explorer Quiz Modal -->
+  <div id="quizModal" class="fixed inset-0 z-50 hidden items-start justify-center overflow-y-auto p-3 sm:p-6 bg-slate-950/85 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="quizTitle">
+    <div class="glass-card w-full max-w-xl my-auto rounded-2xl shadow-2xl border border-slate-700/70 overflow-hidden">
+      <div class="sticky top-0 z-10 flex items-center justify-between px-5 py-4 bg-slate-900 border-b border-slate-800">
+        <h3 id="quizTitle" class="text-lg font-bold text-white">Space Explorer Quick Quiz</h3>
+        <button id="closeQuizBtn" type="button" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition cursor-pointer" aria-label="Close quiz">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div id="quizBody" class="p-5 sm:p-6 space-y-5"></div>
+    </div>
+  </div>
+
+  <!-- Footer with Data & AI Disclosure -->
+  <footer class="border-t border-slate-800/80 bg-slate-950/95 mt-12">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-slate-400">
+      <div>
+        <span class="font-semibold text-slate-200">NASA Data Source:</span>
+        Public-domain mission imagery &amp; metadata via
+        <a href="https://api.nasa.gov/" target="_blank" rel="noopener noreferrer" class="text-sky-400 hover:underline">NASA Image and Video Library API (images-api.nasa.gov)</a>.
+      </div>
+      <div>
+        2026 NASA Space Apps Challenge | Maaz Ahmed
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const ARTIFACTS = [
+      {
+        id: 'apollo-11-eagle',
+        name: 'Apollo 11 Eagle Descent Stage',
+        world: 'Moon',
+        year: '1969',
+        crew: 'Neil Armstrong, Buzz Aldrin, and Michael Collins (Lunar Module Eagle)',
+        dates: 'Sunday, July 20, 1969 to Monday, July 21, 1969',
+        location: 'Sea of Tranquility (0.67° N, 23.47° E)',
+        duration: '21h 36m on surface (1-day planned stay, completed on schedule)',
+        nasaQuery: 'Apollo 11 Lunar Module Eagle surface',
+        tagline: 'The four-legged launchpad left behind when humans first walked on another world.',
+        story: 'When Neil Armstrong and Buzz Aldrin fired the ascent engine to return to lunar orbit, they left the lower half of the Eagle lander behind in the Sea of Tranquility. Its gold-foil legs still stand motionless in the lunar dust, and the laser retroreflector placed nearby still bounces Earth-based laser beams back home today.',
+        whyHow: 'To save weight and fuel, NASA designed the Lunar Module in two parts. The lower descent stage carried the landing engine, radar, and legs, and then acted as a flat launchpad so the lighter upper stage could blast the astronauts back to Michael Collins in lunar orbit.',
+        wrong: 'During descent, the guidance computer triggered 1202 and 1201 overload alarms, and the autopilot aimed straight for a boulder-filled crater. Neil Armstrong took manual control and landed with less than 30 seconds of hover fuel remaining.',
+        discovery: 'Delivered the first lunar rock samples (21.55 kg) and deployed a laser retroreflector still used to measure the Moon’s distance.',
+        phases: [
+          { label: 'Step 1: How It Landed', text: 'As Eagle approached the Moon, computer alarms went off and boulders blocked the landing zone. Neil Armstrong steered manually and touched down safely on four crushable legs with under 30 seconds of fuel left.' },
+          { label: 'Step 2: What It Did', text: 'Armstrong and Aldrin stepped onto the Moon, collected 21.55 kg of lunar rocks, and set up a seismometer and a laser mirror that scientists still use today.' },
+          { label: 'Step 3: How It Ended', text: 'When it was time to leave, the upper cabin fired its rocket directly off the top of the lower stage, leaving the four-legged base standing forever in the Sea of Tranquility.' }
+        ]
+      },
+      {
+        id: 'apollo-15-lrv',
+        name: 'Apollo 15 Lunar Roving Vehicle',
+        world: 'Moon',
+        year: '1971',
+        crew: 'David Scott, James Irwin, and Alfred Worden (LRV-1)',
+        dates: 'Saturday, July 31, 1971 to Monday, August 2, 1971',
+        location: 'Hadley-Apennine (26.13° N, 3.63° E)',
+        duration: '66h 54m on surface (3-day planned stay, 27.9 km driven)',
+        nasaQuery: 'Apollo 15 Lunar Roving Vehicle',
+        tagline: 'The first electric car ever driven on the Moon, parked forever near Hadley Rille.',
+        story: 'The Apollo 15 Lunar Roving Vehicle folded up like origami inside the lander’s cargo bay, then unfolded to carry astronauts David Scott and James Irwin 27.9 kilometers across lunar valleys. When the crew drove it one last time, they parked it facing the lander so Earth could watch their liftoff through its television camera.',
+        whyHow: 'On earlier missions, astronauts could only walk short distances in heavy spacesuits. NASA built a lightweight 210 kg electric rover with wire-mesh titanium wheels and four 0.25-horsepower hub motors so crews could explore distant mountains and canyons.',
+        wrong: 'Right after deployment, the front-wheel steering motor failed to respond. Fortunately, the rover had independent rear-wheel steering, so the astronauts drove the entire mission using rear steering only.',
+        discovery: 'Enabled exploration of Hadley Rille and retrieval of the 4.1-billion-year-old "Genesis Rock" anorthosite sample.',
+        phases: [
+          { label: 'Step 1: How It Landed', text: 'The rover rode to the Moon folded flat against the side of the Lunar Module. Astronauts pulled release cables to unfold its frame and lock its four wire-mesh wheels.' },
+          { label: 'Step 2: What It Did', text: 'Running on two 36-volt batteries, it carried two astronauts and heavy rock tools 27.9 km up steep lunar slopes and along the edge of Hadley Rille canyon.' },
+          { label: 'Step 3: How It Ended', text: 'Before blasting off, the crew parked the rover 100 meters away with its camera aimed at the lander so controllers on Earth could watch their liftoff live.' }
+        ]
+      },
+      {
+        id: 'sojourner',
+        name: 'Mars Pathfinder & Sojourner',
+        world: 'Mars',
+        year: '1997',
+        crew: 'NASA JPL Pathfinder Team (Carl Sagan Memorial Station & Sojourner)',
+        dates: 'Friday, July 4, 1997 to Saturday, September 27, 1997',
+        location: 'Ares Vallis (19.13° N, 33.22° W)',
+        duration: '7 sols planned | 83 sols actual (11x longer)',
+        nasaQuery: 'Mars Pathfinder Sojourner rover',
+        tagline: 'The microwave-sized pioneer that proved wheeled robots could rove Mars.',
+        story: 'Weighing only 10.6 kilograms, Sojourner arrived wrapped in giant airbags that bounced across Martian rocks before rolling down a solar-petal ramp. Engineers expected the little rover to last just a week, yet it analyzed rocks for 83 Martian days and helped prove Mars once had flowing water.',
+        whyHow: 'NASA wanted a faster, lower-cost way to land on Mars. Instead of heavy landing rockets, Pathfinder used a parachute and giant airbags to bounce to a stop, then unfolded solar petals to release Sojourner with its six-wheel rocker-bogie suspension.',
+        wrong: 'No major failure happened during landing, though the lander’s battery eventually lost its ability to recharge after enduring 83 freezing Martian nights (nearly 12 times its 7-sol design life), cutting off communication.',
+        discovery: 'Confirmed rounded pebbles and ancient flood-plain geology in Ares Vallis using its Alpha Proton X-Ray Spectrometer.',
+        phases: [
+          { label: 'Step 1: How It Landed', text: 'Instead of rockets, Pathfinder used a parachute and inflated giant airbags, bouncing roughly 15 times across Ares Vallis until it rolled to a stop.' },
+          { label: 'Step 2: What It Did', text: 'The lander unfolded like a flower, and the 10.6 kg Sojourner rover drove down a ramp to zap nearby rocks and measure their chemical makeup.' },
+          { label: 'Step 3: How It Ended', text: 'After 83 Martian days, the freezing cold finally wore out the lander’s battery. Without the lander to relay signals, Sojourner fell silent beside a boulder called Yogi Rock.' }
+        ]
+      },
+      {
+        id: 'opportunity',
+        name: 'Mars Rover Opportunity',
+        world: 'Mars',
+        year: '2004',
+        crew: 'NASA JPL Mars Exploration Rover Team (MER-B)',
+        dates: 'Sunday, January 25, 2004 to Sunday, June 10, 2018',
+        location: 'Perseverance Valley (1.95° S, 354.47° E)',
+        duration: '90 sols planned | 5,111 sols actual (56x longer)',
+        nasaQuery: 'Mars Opportunity rover Meridiani',
+        tagline: 'The marathon rover that drove 45.16 km across Mars over nearly 15 years.',
+        story: 'Built for a 90-day sprint, Opportunity kept going for more than 14 years because Martian winds repeatedly blew dust off its solar panels. It drove a full 45.16-kilometer marathon across craters until a planet-encircling dust storm blotted out the Sun in 2018.',
+        whyHow: 'NASA sent twin solar-powered geologists (Spirit and Opportunity) to search for signs of past water. Opportunity carried panoramic cameras, a rock-grinding tool, and spectrometers to inspect layered bedrock inside craters.',
+        wrong: 'In June 2018, a massive global dust storm turned day into pitch-black night, starving Opportunity’s solar panels of power. Its internal clock and heaters failed in the extreme cold, ending the mission after 5,111 sols.',
+        discovery: 'Found hematite spheres ("blueberries") and clay minerals proving ancient liquid water once existed on Mars.',
+        phases: [
+          { label: 'Step 1: How It Landed', text: 'Protected by airbags, Opportunity bounced straight into a small impact crater (Eagle Crater) and immediately saw layered bedrock right in front of its cameras.' },
+          { label: 'Step 2: What It Did', text: 'Over 14+ years, it drove 45.16 km from crater to crater, grinding into rocks and discovering mineral spheres formed in ancient liquid water.' },
+          { label: 'Step 3: How It Ended', text: 'A giant 2018 dust storm blocked sunlight across Mars for months. Opportunity’s batteries drained in the dark, and it never woke back up.' }
+        ]
+      },
+      {
+        id: 'insight',
+        name: 'InSight Mars Lander',
+        world: 'Mars',
+        year: '2018',
+        crew: 'NASA JPL & CNES / DLR Science Team (InSight)',
+        dates: 'Monday, November 26, 2018 to Wednesday, December 21, 2022',
+        location: 'Elysium Planitia (4.50° N, 135.62° E)',
+        duration: '720 days planned | 1,440+ sols actual (2x longer)',
+        nasaQuery: 'InSight Mars lander seismometer',
+        tagline: 'The stationary geologist that took Mars’s pulse and heard over 1,300 marsquakes.',
+        story: 'Unlike rovers, InSight never drove a single meter because its job was to sit completely still and listen. Using its robotic arm, it placed a dome-covered seismometer directly onto Martian soil and recorded more than 1,300 marsquakes from deep underground.',
+        whyHow: 'Unlike rovers that study surface rocks, InSight was designed to study Mars’s deep interior. Its ultra-sensitive SEIS seismometer measured tiny ground vibrations from marsquakes and meteoroid impacts to map the crust, mantle, and core.',
+        wrong: 'Two things went wrong: first, its German-built "mole" heat probe could not dig deep because Elysium Planitia’s soil clumped unexpectedly; second, heavy Martian dust coated its solar panels until power ran out in December 2022.',
+        discovery: 'Detected over 1,300 marsquakes, revealing the thickness of the Martian crust and the size of its liquid core.',
+        phases: [
+          { label: 'Step 1: How It Landed', text: 'InSight used a heat shield, parachute, and retro-rockets to touch down gently on flat Elysium Planitia so its instruments could sit level.' },
+          { label: 'Step 2: What It Did', text: 'A 1.8-meter robotic arm placed a wind-shielded seismometer on the ground, recording over 1,300 marsquakes to map the inside of Mars.' },
+          { label: 'Step 3: How It Ended', text: 'Thick red dust slowly covered its two round solar panels until there was no longer enough electricity to run the radio, ending the mission in December 2022.' }
+        ]
+      },
+      {
+        id: 'ingenuity',
+        name: 'Ingenuity Mars Helicopter',
+        world: 'Mars',
+        year: '2021',
+        crew: 'NASA JPL Ingenuity Team & Perseverance Rover',
+        dates: 'Monday, April 19, 2021 to Thursday, January 18, 2024',
+        location: 'Jezero Crater (18.4° N, 77.5° E)',
+        duration: '5 flights planned | 72 flights actual (14x more)',
+        nasaQuery: 'Ingenuity Mars Helicopter flight',
+        tagline: 'The 1.8 kg rotorcraft that achieved the first powered, controlled flight on another planet.',
+        story: 'Mars’s atmosphere is only 1% as dense as Earth’s, making flight extraordinarily difficult. Ingenuity spun its carbon-fiber blades over 2,500 RPM and completed 72 flights, scouting ahead for the Perseverance rover until a rotor tip struck sand during Flight 72.',
+        whyHow: 'NASA wanted to test powered flight on another world as a technology demonstrator. Ingenuity hitched a ride under the Perseverance rover’s belly, charged via a top-mounted solar panel, and used ultra-fast counter-rotating blades to fly.',
+        wrong: 'On Flight 72, Ingenuity flew over smooth, featureless sand dunes that gave its navigation camera almost no visual landmarks. During landing, one or more rotor blade tips struck the ground and snapped, ending its flying days.',
+        discovery: 'Proved aerial scouting is possible on Mars, flying over 17 km total and paving the way for future planetary drones.',
+        phases: [
+          { label: 'Step 1: How It Landed', text: 'Ingenuity rode tucked underneath the Perseverance rover’s belly, then unfolded and dropped a few inches onto the dusty floor of Jezero Crater.' },
+          { label: 'Step 2: What It Did', text: 'Planned for just 5 test flights, it flew 72 times for over 17 km total, taking aerial photos to help Perseverance pick safe driving routes.' },
+          { label: 'Step 3: How It Ended', text: 'During Flight 72 over smooth sand dunes, its navigation camera lost track of the ground. The helicopter landed hard and broke its rotor tips, retiring in place.' }
+        ]
+      }
+    ];
+
+    const QUIZ_QUESTIONS = [
+      {
+        question: 'Which Apollo 11 instrument left on the Moon is STILL used by scientists on Earth today?',
+        options: ['The Lunar Roving Vehicle', 'The Laser Retroreflector Array', 'The Helicopter Rotor', 'The Airbag Lander'],
+        correct: 1,
+        explanation: 'Astronomers still bounce laser pulses off the Apollo 11 retroreflector to measure the distance between Earth and the Moon.'
+      },
+      {
+        question: 'What emergency happened just before Apollo 11 Eagle touched down on the Moon?',
+        options: ['A solar panel broke off', 'Computer overload alarms (1202/1201) and a boulder-filled crater', 'All four legs failed to open', 'The radio antenna melted'],
+        correct: 1,
+        explanation: 'The guidance computer triggered 1202 and 1201 alarms while aiming at a boulder field, forcing Neil Armstrong to land manually with under 30 seconds of fuel.'
+      },
+      {
+        question: 'What failed on the Apollo 15 Lunar Roving Vehicle right after it was unfolded?',
+        options: ['Front-wheel steering', 'The headlights', 'The electric batteries', 'The seatbelts'],
+        correct: 0,
+        explanation: 'Front-wheel steering failed early on, so astronauts David Scott and James Irwin drove the entire 27.9 km using rear-wheel steering.'
+      },
+      {
+        question: 'How did NASA Earth controllers watch the Apollo 15 astronauts blast off from the Moon?',
+        options: ['Through a telescope in Hawaii', 'Through the TV camera on the parked Lunar Roving Vehicle', 'From a Mars orbiter', 'They could not watch it'],
+        correct: 1,
+        explanation: 'The crew parked the rover 100 meters away facing the lander so its Earth-controlled camera could broadcast the liftoff.'
+      },
+      {
+        question: 'How did Mars Pathfinder and Opportunity cushion their landings on Mars?',
+        options: ['Giant inflatable airbags', 'Parachutes only', 'Magnetic docking', 'Water splashdown'],
+        correct: 0,
+        explanation: 'Both Pathfinder (1997) and Opportunity (2004) used clusters of giant airbags to bounce across the Martian surface.'
+      },
+      {
+        question: 'How long was the Sojourner rover originally planned to last on Mars vs. how long it actually worked?',
+        options: ['1 day planned, 3 days actual', '7 sols planned, 83 sols actual', '1 year planned, 2 years actual', '30 sols planned, 30 sols actual'],
+        correct: 1,
+        explanation: 'Sojourner was designed for just 7 Martian days (sols) but operated for 83 sols, nearly 12 times longer than expected.'
+      },
+      {
+        question: 'What finally ended the Mars rover Opportunity’s 14-year mission in June 2018?',
+        options: ['It drove off a cliff', 'A planet-wide dust storm blocked sunlight from its solar panels', 'A meteoroid hit its antenna', 'Its wheels dissolved in acid'],
+        correct: 1,
+        explanation: 'A massive global dust storm turned Martian day into darkness, draining Opportunity’s solar-charged batteries.'
+      },
+      {
+        question: 'What did the stationary InSight lander discover by listening to 1,300+ marsquakes?',
+        options: ['Liquid oceans on the surface', 'Active volcanoes erupting daily', 'The thickness of Mars’s crust and size of its liquid core', 'Ancient rover tracks'],
+        correct: 2,
+        explanation: 'Seismic waves from marsquakes allowed scientists to map Mars’s crust, mantle, and liquid core for the first time.'
+      },
+      {
+        question: 'Which InSight instrument struggled to dig into the clumpy Martian soil at Elysium Planitia?',
+        options: ['The SEIS seismometer', 'The German-built "mole" heat probe', 'The twin solar arrays', 'The weather vane'],
+        correct: 1,
+        explanation: 'The self-hammering "mole" heat probe could not gain enough friction in the unexpectedly clumpy soil to dig deep.'
+      },
+      {
+        question: 'Why did Ingenuity have to spin its blades over 2,500 RPM to fly on Mars?',
+        options: ['Mars gravity is 10x stronger', 'Mars’s atmosphere is only ~1% as dense as Earth’s', 'It carried heavy rock samples', 'Solar panels blocked the wind'],
+        correct: 1,
+        explanation: 'Because Martian air is roughly 1% as dense as Earth’s at sea level, blades must spin much faster to generate lift.'
+      }
+    ];
+
+    let activeFilter = 'all';
+    let searchTerm = '';
+    let exploredIds = new Set();
+    let currentArtifact = null;
+    let currentPhaseIdx = 0;
+
+    let shuffledQuiz = [];
+    let quizIndex = 0;
+    let quizScore = 0;
+    let quizAnswered = false;
+    let quizHistory = [];
+
+    try {
+      const saved = localStorage.getItem('aotf_explored_v1');
+      if (saved) exploredIds = new Set(JSON.parse(saved));
+    } catch (e) {
+      // Ignore storage restrictions
+    }
+
+    try {
+      const savedHist = localStorage.getItem('aotf_quiz_history_v1');
+      if (savedHist) quizHistory = JSON.parse(savedHist);
+    } catch (e) {
+      // Ignore storage restrictions
+    }
+
+    function saveExplored() {
+      try {
+        localStorage.setItem('aotf_explored_v1', JSON.stringify(Array.from(exploredIds)));
+      } catch (e) {
+        // Ignore storage restrictions
+      }
+    }
+
+    function saveQuizHistory(score, total) {
+      quizHistory.unshift({
+        score,
+        total,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+      if (quizHistory.length > 3) quizHistory = quizHistory.slice(0, 3);
+      try {
+        localStorage.setItem('aotf_quiz_history_v1', JSON.stringify(quizHistory));
+      } catch (e) {
+        // Ignore storage restrictions
+      }
+    }
+
+    function shuffleQuestions(list) {
+      const copy = list.slice();
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const temp = copy[i];
+        copy[i] = copy[j];
+        copy[j] = temp;
+      }
+      return copy;
+    }
+
+    function updateExploredCounter() {
+      document.getElementById('exploredCount').textContent = String(exploredIds.size);
+      document.getElementById('totalCount').textContent = String(ARTIFACTS.length);
+    }
+
+    function renderGrid() {
+      const grid = document.getElementById('artifactGrid');
+      const empty = document.getElementById('emptyState');
+      const term = searchTerm.trim().toLowerCase();
+
+      const filtered = ARTIFACTS.filter((item) => {
+        const matchesWorld = activeFilter === 'all' || item.world === activeFilter;
+        const matchesText =
+          !term ||
+          item.name.toLowerCase().includes(term) ||
+          item.crew.toLowerCase().includes(term) ||
+          item.location.toLowerCase().includes(term) ||
+          item.discovery.toLowerCase().includes(term) ||
+          item.tagline.toLowerCase().includes(term);
+        return matchesWorld && matchesText;
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+
+      empty.classList.add('hidden');
+      grid.innerHTML = filtered
+        .map((item) => {
+          const isExplored = exploredIds.has(item.id);
+          const worldBadge =
+            item.world === 'Moon'
+              ? 'bg-slate-700/70 text-slate-200 border-slate-600/50'
+              : 'bg-orange-500/15 text-orange-300 border-orange-400/30';
+          return `
+            <article class="glass-card rounded-2xl p-5 flex flex-col justify-between gap-4 hover:border-sky-400/50 transition group">
+              <div class="space-y-3">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold font-mono-tech border ${worldBadge}">${item.world} | ${item.year}</span>
+                  ${isExplored ? '<span class="text-xs font-semibold text-emerald-400">Explored</span>' : '<span class="text-xs text-slate-500">Silent Artifact</span>'}
+                </div>
+                <h3 class="text-lg font-bold text-white group-hover:text-sky-300 transition">${item.name}</h3>
+                <p class="text-sm text-slate-300 leading-relaxed">${item.tagline}</p>
+              </div>
+              <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
+                <span class="text-xs text-slate-400 font-mono-tech truncate">${item.location.split('(')[0].trim()}</span>
+                <button type="button" data-open-id="${item.id}" class="shrink-0 px-3.5 py-1.5 rounded-lg bg-sky-500/15 hover:bg-sky-500 text-sky-300 hover:text-slate-950 border border-sky-400/30 text-xs font-bold transition cursor-pointer">
+                  Open Mission Story
+                </button>
+              </div>
+            </article>
+          `;
+        })
+        .join('');
+    }
+
+    function renderPhase() {
+      if (!currentArtifact) return;
+      const tabsEl = document.getElementById('phaseTabs');
+      const contentEl = document.getElementById('phaseContent');
+      tabsEl.innerHTML = currentArtifact.phases
+        .map((p, idx) => {
+          const active = idx === currentPhaseIdx;
+          return `
+            <button type="button" data-phase-idx="${idx}" class="px-3 py-2 rounded-xl text-xs font-semibold text-left transition cursor-pointer ${
+              active
+                ? 'bg-sky-500 text-slate-950'
+                : 'bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700'
+            }">
+              ${p.label}
+            </button>
+          `;
+        })
+        .join('');
+      contentEl.textContent = currentArtifact.phases[currentPhaseIdx].text;
+    }
+
+    function openLightbox(imgUrl, title, nasaId) {
+      const lb = document.getElementById('imageLightbox');
+      const img = document.getElementById('lightboxImg');
+      document.getElementById('lightboxTitle').textContent = title || 'NASA Mission Photograph';
+      document.getElementById('lightboxMeta').textContent = nasaId ? `NASA ID: ${nasaId} | Public Domain Archive` : 'NASA Public Domain Archive';
+      img.src = imgUrl;
+      img.alt = title || 'NASA Mission Photograph';
+      lb.classList.remove('hidden');
+      lb.classList.add('flex');
+    }
+
+    function closeLightbox() {
+      const lb = document.getElementById('imageLightbox');
+      lb.classList.add('hidden');
+      lb.classList.remove('flex');
+      document.getElementById('lightboxImg').src = '';
+    }
+
+    async function fetchNasaPhotos(query) {
+      const gallery = document.getElementById('nasaGallery');
+      const status = document.getElementById('nasaStatus');
+      gallery.innerHTML = `
+        <div class="h-32 rounded-xl bg-slate-900 animate-pulse border border-slate-800"></div>
+        <div class="h-32 rounded-xl bg-slate-900 animate-pulse border border-slate-800"></div>
+        <div class="h-32 rounded-xl bg-slate-900 animate-pulse border border-slate-800"></div>
+      `;
+      status.textContent = 'Querying NASA Image and Video Library...';
+
+      try {
+        const url = `https://images-api.nasa.gov/search?q=${encodeURIComponent(query)}&media_type=image&page_size=6`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        const items = (json.collection && json.collection.items ? json.collection.items : [])
+          .filter((it) => it.links && it.links[0] && it.links[0].href && it.data && it.data[0])
+          .slice(0, 3);
+
+        if (items.length === 0) {
+          gallery.innerHTML = '';
+          status.textContent = 'No matching photos returned for this query. Try Refresh Archive.';
+          return;
+        }
+
+        gallery.innerHTML = items
+          .map((it) => {
+            const imgUrl = it.links[0].href;
+            const rawTitle = it.data[0].title || 'NASA Mission Photo';
+            const safeTitle = rawTitle.replace(/"/g, '&quot;');
+            const nasaId = (it.data[0].nasa_id || '').replace(/"/g, '&quot;');
+            return `
+              <button type="button" data-full-img="${imgUrl}" data-full-title="${safeTitle}" data-full-id="${nasaId}" class="group text-left rounded-xl overflow-hidden bg-slate-900 border border-slate-800 hover:border-sky-400/60 flex flex-col transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky-500">
+                <div class="relative w-full h-32 overflow-hidden">
+                  <img src="${imgUrl}" alt="${safeTitle}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
+                  <span class="absolute bottom-2 right-2 px-2 py-0.5 rounded bg-slate-950/80 text-[10px] font-mono-tech text-sky-300 border border-slate-700">
+                    Full View
+                  </span>
+                </div>
+                <span class="p-2.5 text-[11px] text-slate-300 line-clamp-2 leading-snug">
+                  ${safeTitle} ${nasaId ? `<span class="text-slate-500 font-mono-tech">(${nasaId})</span>` : ''}
+                </span>
+              </button>
+            `;
+          })
+          .join('');
+        status.textContent = '';
+      } catch (err) {
+        gallery.innerHTML = `
+          <div class="sm:col-span-3 p-4 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-slate-300">
+            Could not reach NASA Image Library right now (${err.message}). Click "Refresh Archive" to try again.
+          </div>
+        `;
+        status.textContent = '';
+      }
+    }
+
+    function updateExploredButton() {
+      if (!currentArtifact) return;
+      const btn = document.getElementById('markExploredBtn');
+      const done = exploredIds.has(currentArtifact.id);
+      if (done) {
+        btn.className = 'shrink-0 px-4 py-2.5 rounded-xl text-sm font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 hover:bg-emerald-500/30 transition cursor-pointer';
+        btn.textContent = 'Marked as Explored';
+      } else {
+        btn.className = 'shrink-0 px-4 py-2.5 rounded-xl text-sm font-semibold bg-sky-500 hover:bg-sky-400 text-slate-950 transition cursor-pointer';
+        btn.textContent = 'Mark as Explored';
+      }
+    }
+
+    function openStoryModal(id) {
+      const item = ARTIFACTS.find((a) => a.id === id);
+      if (!item) return;
+      currentArtifact = item;
+      currentPhaseIdx = 0;
+
+      document.getElementById('modalBadge').textContent = `${item.world} | ${item.year}`;
+      document.getElementById('modalTitle').textContent = item.name;
+      document.getElementById('modalCrew').textContent = item.crew;
+      document.getElementById('modalDates').textContent = item.dates;
+      document.getElementById('modalLocation').textContent = item.location;
+      document.getElementById('modalDuration').textContent = item.duration;
+      document.getElementById('modalStory').textContent = item.story;
+      document.getElementById('modalWhyHow').textContent = item.whyHow;
+      document.getElementById('modalWrong').textContent = item.wrong;
+      document.getElementById('modalDiscovery').textContent = item.discovery;
+
+      renderPhase();
+      updateExploredButton();
+
+      const modal = document.getElementById('storyModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      fetchNasaPhotos(item.nasaQuery);
+    }
+
+    function closeStoryModal() {
+      const modal = document.getElementById('storyModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function getGradeTier(score, total) {
+      if (score === total) {
+        return {
+          title: 'Amazing! You Are a Digital Astronaut!',
+          subtitle: 'Perfect 10 out of 10! You mastered every Moon and Mars mission.',
+          badgeClass: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40',
+          cardClass: 'border-emerald-500/40 bg-emerald-950/25'
+        };
+      }
+      if (score >= 5) {
+        return {
+          title: 'Great Job! You Are Becoming an Astronaut!',
+          subtitle: 'Solid mission knowledge. Review a few more stories and try for a perfect 10!',
+          badgeClass: 'bg-sky-500/20 text-sky-300 border-sky-400/40',
+          cardClass: 'border-sky-500/40 bg-sky-950/25'
+        };
+      }
+      return {
+        title: 'Space Cadet in Training!',
+        subtitle: 'Every explorer starts somewhere. Open the mission stories and retry the quiz!',
+        badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-400/40',
+        cardClass: 'border-amber-500/40 bg-amber-950/25'
+      };
+    }
+
+    function renderQuiz() {
+      const body = document.getElementById('quizBody');
+      if (quizIndex >= shuffledQuiz.length) {
+        const total = shuffledQuiz.length;
+        saveQuizHistory(quizScore, total);
+        const tier = getGradeTier(quizScore, total);
+
+        const historyRows = quizHistory
+          .map((entry, idx) => {
+            const label = idx === 0 ? 'Current Attempt' : `Previous Attempt ${idx}`;
+            const highlight = idx === 0 ? 'border-sky-400/40 bg-slate-900 text-white' : 'border-slate-800 bg-slate-900/60 text-slate-300';
+            return `
+              <div class="flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-xs ${highlight}">
+                <span class="font-medium">${label} <span class="text-slate-500 font-mono-tech">(${entry.time})</span></span>
+                <span class="font-bold font-mono-tech text-sky-300">${entry.score} / ${entry.total}</span>
+              </div>
+            `;
+          })
+          .join('');
+
+        body.innerHTML = `
+          <div class="space-y-5">
+            <div class="p-5 rounded-2xl border text-center space-y-2 ${tier.cardClass}">
+              <span class="inline-block px-3 py-1 rounded-full text-xs font-bold font-mono-tech border ${tier.badgeClass}">
+                Score: ${quizScore} / ${total}
+              </span>
+              <h4 class="text-xl sm:text-2xl font-bold text-white">${tier.title}</h4>
+              <p class="text-sm text-slate-300">${tier.subtitle}</p>
+            </div>
+
+            <div class="space-y-2">
+              <p class="text-xs font-bold font-mono-tech uppercase tracking-wider text-slate-400">
+                Recent Results
+              </p>
+              <div class="space-y-2">
+                ${historyRows}
+              </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-2">
+              <button id="restartQuizBtn" type="button" class="px-5 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 text-sm font-bold transition cursor-pointer">
+                Retry Quiz
+              </button>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      const q = shuffledQuiz[quizIndex];
+      body.innerHTML = `
+        <div class="space-y-4">
+          <div class="flex items-center justify-between text-xs text-slate-400 font-mono-tech">
+            <span>Question ${quizIndex + 1} of ${shuffledQuiz.length}</span>
+            <span>Score: <strong class="text-sky-400">${quizScore}</strong></span>
+          </div>
+          <p class="text-base font-semibold text-white leading-snug">${q.question}</p>
+          <div class="space-y-2" id="quizOptions">
+            ${q.options
+              .map(
+                (opt, idx) => `
+              <button type="button" data-quiz-opt="${idx}" class="w-full text-left px-4 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-sm text-slate-200 transition cursor-pointer">
+                ${opt}
+              </button>
+            `
+              )
+              .join('')}
+          </div>
+          <div id="quizFeedback" class="hidden p-3.5 rounded-xl text-sm leading-relaxed"></div>
+          <div class="flex justify-end">
+            <button id="nextQuizBtn" type="button" class="hidden px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 text-sm font-bold transition cursor-pointer">
+              ${quizIndex === shuffledQuiz.length - 1 ? 'See Results' : 'Next Question'}
+            </button>
+          </div>
+        </div>
+      `;
+      quizAnswered = false;
+    }
+
+    function startNewQuiz() {
+      shuffledQuiz = shuffleQuestions(QUIZ_QUESTIONS);
+      quizIndex = 0;
+      quizScore = 0;
+      renderQuiz();
+    }
+
+    function openQuizModal() {
+      startNewQuiz();
+      const modal = document.getElementById('quizModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeQuizModal() {
+      const modal = document.getElementById('quizModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    // Event Listeners
+    document.querySelectorAll('.filter-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        activeFilter = btn.getAttribute('data-filter');
+        document.querySelectorAll('.filter-btn').forEach((b) => {
+          const isActive = b.getAttribute('data-filter') === activeFilter;
+          b.className = isActive
+            ? 'filter-btn px-4 py-2 rounded-xl text-sm font-semibold bg-sky-500 text-slate-950 transition cursor-pointer'
+            : 'filter-btn px-4 py-2 rounded-xl text-sm font-semibold bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700 transition cursor-pointer';
+        });
+        renderGrid();
+      });
+    });
+
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      searchTerm = e.target.value;
+      renderGrid();
+    });
+
+    document.getElementById('resetFiltersBtn').addEventListener('click', () => {
+      activeFilter = 'all';
+      searchTerm = '';
+      document.getElementById('searchInput').value = '';
+      document.querySelectorAll('.filter-btn').forEach((b) => {
+        const isActive = b.getAttribute('data-filter') === 'all';
+        b.className = isActive
+          ? 'filter-btn px-4 py-2 rounded-xl text-sm font-semibold bg-sky-500 text-slate-950 transition cursor-pointer'
+          : 'filter-btn px-4 py-2 rounded-xl text-sm font-semibold bg-slate-900 text-slate-300 border border-slate-800 hover:border-slate-700 transition cursor-pointer';
+      });
+      renderGrid();
+    });
+
+    document.getElementById('artifactGrid').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-open-id]');
+      if (btn) openStoryModal(btn.getAttribute('data-open-id'));
+    });
+
+    document.getElementById('phaseTabs').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-phase-idx]');
+      if (btn) {
+        currentPhaseIdx = Number(btn.getAttribute('data-phase-idx'));
+        renderPhase();
+      }
+    });
+
+    document.getElementById('nasaGallery').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-full-img]');
+      if (btn) {
+        openLightbox(
+          btn.getAttribute('data-full-img'),
+          btn.getAttribute('data-full-title'),
+          btn.getAttribute('data-full-id')
+        );
+      }
+    });
+
+    document.getElementById('retryNasaBtn').addEventListener('click', () => {
+      if (currentArtifact) fetchNasaPhotos(currentArtifact.nasaQuery);
+    });
+
+    document.getElementById('markExploredBtn').addEventListener('click', () => {
+      if (!currentArtifact) return;
+      if (exploredIds.has(currentArtifact.id)) {
+        exploredIds.delete(currentArtifact.id);
+      } else {
+        exploredIds.add(currentArtifact.id);
+      }
+      saveExplored();
+      updateExploredCounter();
+      updateExploredButton();
+      renderGrid();
+    });
+
+    document.getElementById('closeModalBtn').addEventListener('click', closeStoryModal);
+    document.getElementById('storyModal').addEventListener('click', (e) => {
+      if (e.target.id === 'storyModal') closeStoryModal();
+    });
+
+    document.getElementById('closeLightboxBtn').addEventListener('click', closeLightbox);
+    document.getElementById('imageLightbox').addEventListener('click', (e) => {
+      if (e.target.id === 'imageLightbox') closeLightbox();
+    });
+
+    document.getElementById('openQuizBtn').addEventListener('click', openQuizModal);
+    document.getElementById('closeQuizBtn').addEventListener('click', closeQuizModal);
+    // Quiz modal closes only via the Close (X) button or Escape key to prevent accidental exits
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeLightbox();
+        closeStoryModal();
+        closeQuizModal();
+      }
+    });
+
+    document.getElementById('quizBody').addEventListener('click', (e) => {
+      const optBtn = e.target.closest('[data-quiz-opt]');
+      if (optBtn && !quizAnswered) {
+        quizAnswered = true;
+        const chosen = Number(optBtn.getAttribute('data-quiz-opt'));
+        const q = shuffledQuiz[quizIndex];
+        const isCorrect = chosen === q.correct;
+        if (isCorrect) quizScore += 1;
+
+        document.querySelectorAll('[data-quiz-opt]').forEach((b, idx) => {
+          b.disabled = true;
+          if (idx === q.correct) {
+            b.className = 'w-full text-left px-4 py-3 rounded-xl bg-emerald-500/20 border border-emerald-400/50 text-sm text-emerald-200 font-semibold';
+          } else if (idx === chosen) {
+            b.className = 'w-full text-left px-4 py-3 rounded-xl bg-rose-500/20 border border-rose-400/50 text-sm text-rose-200';
+          } else {
+            b.className = 'w-full text-left px-4 py-3 rounded-xl bg-slate-900/50 border border-slate-800 text-sm text-slate-500';
+          }
+        });
+
+        const fb = document.getElementById('quizFeedback');
+        fb.classList.remove('hidden');
+        fb.className = isCorrect
+          ? 'p-3.5 rounded-xl text-sm bg-emerald-500/15 border border-emerald-400/30 text-emerald-200 leading-relaxed'
+          : 'p-3.5 rounded-xl text-sm bg-rose-500/15 border border-rose-400/30 text-rose-200 leading-relaxed';
+        fb.textContent = (isCorrect ? 'Correct! ' : 'Not quite. ') + q.explanation;
+
+        document.getElementById('nextQuizBtn').classList.remove('hidden');
+      }
+
+      if (e.target.id === 'nextQuizBtn') {
+        quizIndex += 1;
+        renderQuiz();
+      }
+
+      if (e.target.id === 'restartQuizBtn') {
+        startNewQuiz();
+      }
+    });
+
+    document.getElementById('copyLocationBtn').addEventListener('click', () => {
+      if (!currentArtifact) return;
+      const text = currentArtifact.location;
+      const btn = document.getElementById('copyLocationBtn');
+      const done = () => {
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(() => {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          done();
+        });
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        done();
+      }
+    });
+
+    // Animated Twinkling Starfield
+    (function initStarfield() {
+      const canvas = document.getElementById('starfieldCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      let stars = [];
+      let rafId = null;
+
+      function createStars() {
+        const count = Math.min(180, Math.floor((canvas.width * canvas.height) / 9000));
+        stars = Array.from({ length: count }, () => ({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          r: Math.random() * 1.6 + 0.6,
+          vx: (Math.random() - 0.5) * 0.08,
+          vy: -(Math.random() * 0.12 + 0.03),
+          alpha: Math.random() * 0.45 + 0.55,
+          twinkleSpeed: Math.random() * 0.02 + 0.008,
+          phase: Math.random() * Math.PI * 2,
+          tint: Math.random() > 0.75 ? '186, 230, 253' : '255, 255, 255',
+          shiny: Math.random() > 0.7
+        }));
+      }
+
+      function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        createStars();
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (const star of stars) {
+          star.x += star.vx;
+          star.y += star.vy;
+          star.phase += star.twinkleSpeed;
+
+          if (star.y < -2) star.y = canvas.height + 2;
+          if (star.x < -2) star.x = canvas.width + 2;
+          if (star.x > canvas.width + 2) star.x = -2;
+
+          const glow = star.alpha + Math.sin(star.phase) * 0.28;
+          const clamped = Math.max(0.3, Math.min(1, glow));
+          ctx.save();
+          if (star.shiny) {
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = `rgba(${star.tint}, 0.9)`;
+          }
+          ctx.beginPath();
+          ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${star.tint}, ${clamped})`;
+          ctx.fill();
+          ctx.restore();
+        }
+        rafId = requestAnimationFrame(draw);
+      }
+
+      window.addEventListener('resize', resize);
+      resize();
+      if (rafId) cancelAnimationFrame(rafId);
+      draw();
+    })();
+
+    // Init
+    updateExploredCounter();
+    renderGrid();
+  </script>
+</body>
+</html>
